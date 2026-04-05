@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>逾越節之旅</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --gold: #C9A84C;
+  --gold-light: #E8D5A3;
+  --parchment: #F5E6C8;
+  --blood-red: #8B1A1A;
+  --night-blue: #0A0E1A;
+  --warm-brown: #3E2723;
+  --olive: #556B2F;
+  --sand: #D2B48C;
+}
+html { font-size:16px; }
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: #000;
+  color: #F5F5F5;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+.splash {
+  position: fixed; inset:0; z-index:1000;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #0A0A0A 0%, #1A0A00 40%, #2A1508 70%, #0A0A0A 100%);
+  transition: opacity 0.8s, visibility 0.8s;
+}
+.splash.hidden { opacity:0; visibility:hidden; pointer-events:none; }
+.splash-content { text-align:center; animation: fadeUp 1.5s ease; position: relative; z-index: 10; }
+.splash h1 {
+  font-family: 'Noto Serif TC', serif;
+  font-size: 3.5rem; font-weight:900;
+  color: var(--gold);
+  text-shadow: 0 0 60px rgba(201,168,76,0.4);
+  letter-spacing: 0.3em;
+  margin-bottom: 0.5rem;
+}
+.splash .subtitle {
+  font-size: 1rem; color: var(--gold-light);
+  letter-spacing: 0.5em; opacity:0.7;
+  margin-bottom: 3rem;
+}
+.splash .start-btn, .restart-btn, .next-btn {
+  background: transparent;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  padding: 14px 48px;
+  font-size: 1.1rem;
+  font-family: 'Noto Sans TC', sans-serif;
+  letter-spacing: 0.3em;
+  cursor: pointer;
+  transition: all 0.4s;
+}
+.splash .start-btn:hover, .restart-btn:hover, .next-btn:hover {
+  background: var(--gold); color: #0A0A0A;
+}
+.splash .doorframe {
+  position: absolute;
+  width: 200px; height: 300px;
+  border: 3px solid rgba(201,168,76,0.15);
+  border-bottom: none;
+  border-radius: 100px 100px 0 0;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -55%);
+  pointer-events: none;
+}
+.splash .blood-mark {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -82%);
+  width: 160px; height: 8px;
+  background: var(--blood-red);
+  box-shadow: 0 0 20px rgba(139,26,26,0.6); opacity: 0.7;
+  pointer-events: none;
+}
+.splash .blood-side-l, .splash .blood-side-r {
+  position: absolute; top: 50%; transform: translateY(-55%);
+  width: 8px; height: 250px;
+  background: var(--blood-red);
+  box-shadow: 0 0 15px rgba(139,26,26,0.5); opacity: 0.6;
+  pointer-events: none;
+}
+.splash .blood-side-l { left: calc(50% - 100px); }
+.splash .blood-side-r { left: calc(50% + 92px); }
+
+.app { display:none; }
+.app.active { display:block; }
+
+.progress-bar {
+  position: fixed; top:0; left:0; right:0;
+  height: 4px; background: rgba(255,255,255,0.1); z-index: 100;
+}
+.progress-fill {
+  height:100%; background: var(--gold);
+  transition: width 0.6s ease;
+  box-shadow: 0 0 10px var(--gold);
+}
+
+.scene { display: none; min-height:100vh; position: relative; animation: sceneIn 0.8s ease; }
+.scene.active { display:block; }
+
+@keyframes sceneIn { from { opacity:0; } to { opacity:1; } }
+@keyframes fadeUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+@keyframes pulse { 0%,100% { opacity:0.6; } 50% { opacity:1; } }
+
+.scene-bg { position: fixed; inset:0; background-size: cover; background-position: center; z-index: -1; }
+.scene-bg::after { content:''; position:absolute; inset:0; }
+
+.bg-egypt { background: linear-gradient(180deg, #020408 0%, #0A1628 20%, #1A2844 40%, #2C1810 70%, #1A0E08 100%); }
+.bg-egypt::after { background: radial-gradient(ellipse at 70% 20%, rgba(255,220,150,0.08) 0%, transparent 50%), radial-gradient(circle at 30% 80%, rgba(255,120,50,0.1) 0%, transparent 40%); }
+.bg-seder { background: linear-gradient(180deg, #1A1008 0%, #2A1A0A 30%, #3A2515 60%, #1A1008 100%); }
+.bg-seder::after { background: radial-gradient(ellipse at 50% 50%, rgba(255,180,80,0.12) 0%, transparent 60%); }
+.bg-upperroom { background: linear-gradient(180deg, #0E0A06 0%, #1E1408 30%, #2A1A0C 60%, #0E0A06 100%); }
+.bg-upperroom::after { background: radial-gradient(ellipse at 50% 30%, rgba(255,160,60,0.1) 0%, transparent 50%); }
+.bg-modern { background: linear-gradient(180deg, #0A0A14 0%, #141428 40%, #1E1E3A 70%, #0A0A14 100%); }
+.bg-modern::after { background: radial-gradient(ellipse at 50% 40%, rgba(100,120,200,0.08) 0%, transparent 50%); }
+
+.content-panel { max-width: 680px; margin: 0 auto; padding: 80px 24px 60px; position: relative; z-index: 10; }
+
+.scene-header { text-align: center; margin-bottom: 2.5rem; animation: fadeUp 0.8s ease; }
+.scene-era { font-size: 0.75rem; letter-spacing: 0.5em; color: var(--gold); opacity: 0.8; margin-bottom: 0.5rem; }
+.scene-title { font-family: 'Noto Serif TC', serif; font-size: 2.2rem; font-weight: 900; color: var(--gold); text-shadow: 0 0 40px rgba(201,168,76,0.3); margin-bottom: 0.8rem; }
+.scene-verse { font-family: 'Noto Serif TC', serif; font-size: 0.9rem; color: var(--gold-light); opacity: 0.7; font-style: italic; line-height: 1.8; max-width: 520px; margin: 0 auto; }
+
+.narrative { font-size: 1.05rem; line-height: 2; color: rgba(245,230,200,0.9); margin-bottom: 2rem; animation: fadeUp 0.8s ease 0.2s both; }
+.narrative strong { color: var(--gold); font-weight: 500; }
+
+.choices { display: flex; flex-direction: column; gap: 12px; margin: 2rem 0; animation: fadeUp 0.6s ease 0.4s both; }
+.choice-btn {
+  background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.25);
+  color: var(--gold-light); padding: 16px 24px; font-size: 1rem;
+  font-family: 'Noto Sans TC', sans-serif; text-align: left;
+  cursor: pointer; transition: all 0.3s; line-height: 1.6; border-radius: 2px;
+}
+.choice-btn:hover { background: rgba(201,168,76,0.12); border-color: var(--gold); transform: translateX(4px); }
+.choice-btn.selected { background: rgba(201,168,76,0.15); border-color: var(--gold); }
+.choice-btn.correct { background: rgba(86,107,47,0.25); border-color: var(--olive); color: #C8E6C9; }
+.choice-btn.wrong { background: rgba(139,26,26,0.2); border-color: var(--blood-red); color: #FFCDD2; opacity: 0.7; }
+.choice-btn:disabled { pointer-events:none; }
+
+.seder-table { position: relative; width: 100%; max-width: 400px; margin: 2rem auto; aspect-ratio: 1; animation: fadeUp 0.8s ease 0.3s both; }
+.seder-plate { position: absolute; inset: 10%; border-radius: 50%; border: 2px solid rgba(201,168,76,0.3); background: radial-gradient(circle, rgba(62,39,35,0.6) 0%, rgba(26,16,8,0.8) 100%); box-shadow: 0 0 40px rgba(201,168,76,0.1), inset 0 0 30px rgba(0,0,0,0.5); }
+.seder-item {
+  position: absolute; width: 70px; height: 70px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; cursor: pointer; transition: all 0.3s;
+  border: 1px solid rgba(201,168,76,0.2); background: rgba(0,0,0,0.4); z-index: 5;
+}
+.seder-item:hover { transform: scale(1.15); border-color: var(--gold); box-shadow: 0 0 20px rgba(201,168,76,0.3); }
+.seder-item.explored { border-color: var(--gold); background: rgba(201,168,76,0.15); }
+.seder-item .item-label { position: absolute; bottom: -22px; font-size: 0.7rem; color: var(--gold-light); white-space: nowrap; opacity: 0.8; }
+.seder-item:nth-child(1) { top: 2%; left: 50%; transform: translateX(-50%); }
+.seder-item:nth-child(2) { top: 25%; right: 5%; }
+.seder-item:nth-child(3) { bottom: 20%; right: 8%; }
+.seder-item:nth-child(4) { bottom: 2%; left: 50%; transform: translateX(-50%); }
+.seder-item:nth-child(5) { bottom: 20%; left: 8%; }
+.seder-item:nth-child(6) { top: 25%; left: 5%; }
+.seder-item:nth-child(1):hover, .seder-item:nth-child(4):hover { transform: translateX(-50%) scale(1.15); }
+.seder-item:nth-child(1).explored { transform: translateX(-50%); }
+.seder-item:nth-child(4).explored { transform: translateX(-50%); }
+
+.seder-detail { display: none; background: rgba(10,6,2,0.95); border: 1px solid rgba(201,168,76,0.2); padding: 24px; margin: 1.5rem 0; animation: fadeUp 0.4s ease; position: relative; }
+.seder-detail.active { display:block; }
+.seder-detail-title { font-family: 'Noto Serif TC', serif; font-size: 1.3rem; color: var(--gold); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 12px; }
+.seder-detail-text { font-size: 0.95rem; line-height: 1.9; color: rgba(245,230,200,0.85); }
+.seder-detail-verse { font-family: 'Noto Serif TC', serif; font-size: 0.85rem; color: var(--gold-light); opacity: 0.6; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(201,168,76,0.1); font-style: italic; }
+.seder-detail .close-detail { position: absolute; top: 12px; right: 16px; background: none; border: none; color: var(--gold-light); opacity:0.5; font-size: 1.2rem; cursor: pointer; }
+.seder-detail .close-detail:hover { opacity:1; }
+
+.quiz-section { margin: 2rem 0; padding: 24px; border: 1px solid rgba(201,168,76,0.15); background: rgba(201,168,76,0.04); animation: fadeUp 0.6s ease; }
+.quiz-label { font-size: 0.7rem; letter-spacing: 0.3em; color: var(--gold); opacity: 0.7; margin-bottom: 0.8rem; }
+.quiz-question { font-family: 'Noto Serif TC', serif; font-size: 1.1rem; color: var(--gold-light); margin-bottom: 1.2rem; line-height: 1.8; }
+.quiz-feedback { display: none; padding: 16px; margin-top: 1rem; font-size: 0.95rem; line-height: 1.8; border-radius: 2px; }
+.quiz-feedback.show { display:block; animation: fadeUp 0.3s ease; }
+.quiz-feedback.correct-fb { background: rgba(86,107,47,0.15); border-left: 3px solid var(--olive); color: #C8E6C9; }
+.quiz-feedback.wrong-fb { background: rgba(139,26,26,0.15); border-left: 3px solid var(--blood-red); color: #FFCDD2; }
+
+.next-btn { display: none; margin: 2.5rem auto 0; padding: 12px 40px; font-size: 1rem; letter-spacing: 0.2em; }
+.next-btn.show { display:block; animation: fadeUp 0.5s ease; }
+
+.transition-screen { display: none; position: fixed; inset:0; z-index:200; background: #000; flex-direction: column; align-items: center; justify-content: center; text-align: center; animation: fadeUp 0.6s ease; }
+.transition-screen.active { display:flex; }
+.transition-verse { font-family: 'Noto Serif TC', serif; font-size: 1.2rem; color: var(--gold-light); max-width: 500px; line-height: 2; opacity: 0.8; padding: 0 24px; }
+.transition-ref { font-size: 0.8rem; color: var(--gold); opacity: 0.5; margin-top: 1rem; letter-spacing: 0.2em; }
+
+.result-screen { display: none; min-height: 100vh; background: linear-gradient(180deg, #0A0A0A 0%, #1A1008 50%, #0A0A0A 100%); overflow-y: auto; }
+.result-screen.active { display:block; }
+.result-content { max-width: 600px; margin: 0 auto; padding: 80px 24px 120px; text-align: center; animation: fadeUp 1s ease; }
+.result-title { font-family: 'Noto Serif TC', serif; font-size: 2rem; color: var(--gold); margin-bottom: 1rem; }
+.result-score { font-size: 3rem; font-weight: 900; color: var(--gold); margin: 1.5rem 0; text-shadow: 0 0 40px rgba(201,168,76,0.4); }
+.result-msg { font-size: 1rem; color: var(--gold-light); opacity: 0.8; line-height: 2; margin-bottom: 2rem; }
+.result-reflection { border: 1px solid rgba(201,168,76,0.2); padding: 24px; margin: 2rem 0; text-align: left; }
+.result-reflection h3 { font-family: 'Noto Serif TC', serif; color: var(--gold); font-size: 1.1rem; margin-bottom: 1rem; }
+.result-reflection p { font-size: 0.95rem; line-height: 2; color: rgba(245,230,200,0.8); }
+.restart-btn { margin-top: 2rem; padding: 12px 40px; font-size: 1rem; letter-spacing: 0.2em; }
+
+.stars { position: fixed; inset:0; z-index:-1; pointer-events:none; }
+.star { position: absolute; width: 2px; height: 2px; background: #FFF; border-radius: 50%; animation: pulse 3s infinite; }
+
+.fire-glow { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); width: 400px; height: 200px; background: radial-gradient(ellipse, rgba(255,120,30,0.08) 0%, transparent 70%); pointer-events: none; z-index: -1; }
+
+.choice-result { display: none; padding: 20px; margin: 1rem 0; background: rgba(201,168,76,0.06); border-left: 3px solid var(--gold); animation: fadeUp 0.4s ease; line-height: 1.9; color: rgba(245,230,200,0.9); font-size: 0.95rem; }
+.choice-result.show { display:block; }
+
+.divider { width: 60px; height: 1px; background: var(--gold); opacity: 0.3; margin: 2rem auto; }
+
+.explore-prompt { text-align: center; font-size: 0.85rem; color: var(--gold-light); opacity: 0.6; margin-top: 1rem; animation: pulse 2s infinite; }
+
+.candle-container { display: flex; justify-content: center; gap: 40px; margin: 1.5rem 0; }
+.candle { width: 8px; height: 50px; background: linear-gradient(180deg, #F5E6C8 0%, #C9A84C 100%); position: relative; border-radius: 2px; }
+.candle::before { content: ''; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); width: 10px; height: 16px; background: radial-gradient(ellipse, #FFD700 20%, #FF8C00 60%, transparent 100%); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; animation: flicker 0.5s infinite alternate; }
+@keyframes flicker { 0% { opacity:0.8; transform: translateX(-50%) scale(1); } 50% { opacity:1; transform: translateX(-50%) scale(1.1) rotate(2deg); } 100% { opacity:0.7; transform: translateX(-50%) scale(0.95) rotate(-1deg); } }
+
+.cup-display { display: flex; justify-content: center; gap: 30px; margin: 2rem 0; flex-wrap: wrap; }
+.cup { text-align: center; cursor: pointer; transition: transform 0.3s; }
+.cup:hover { transform: scale(1.1); }
+.cup.explored-cup .cup-icon { opacity: 0.5; }
+.cup .cup-icon { font-size: 2.5rem; }
+.cup .cup-name { font-size: 0.75rem; color: var(--gold-light); opacity: 0.7; margin-top: 4px; }
+.cup-detail { display: none; background: rgba(10,6,2,0.95); border: 1px solid rgba(201,168,76,0.2); padding: 20px; margin: 1rem 0; animation: fadeUp 0.4s ease; }
+.cup-detail.active { display:block; }
+.cup-detail h4 { font-family: 'Noto Serif TC', serif; color: var(--gold); margin-bottom: 0.5rem; }
+.cup-detail p { font-size: 0.95rem; line-height: 1.9; color: rgba(245,230,200,0.85); }
+
+.seder-counter { text-align: center; font-size: 0.8rem; color: var(--gold); opacity: 0.6; margin: 0.5rem 0; }
+
+@media (max-width: 480px) {
+  .splash h1 { font-size: 2.5rem; }
+  .scene-title { font-size: 1.8rem; }
+  .seder-table { max-width: 320px; }
+  .seder-item { width: 56px; height: 56px; font-size: 1.6rem; }
+  .content-panel { padding: 60px 18px 40px; }
+  .cup-display { gap: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="splash" id="splash">
+  <div class="doorframe"></div>
+  <div class="blood-mark"></div>
+  <div class="blood-side-l"></div>
+  <div class="blood-side-r"></div>
+  <div class="splash-content">
+    <h1>逾越節</h1>
+    <div class="subtitle">PESACH · פסח</div>
+    <button class="start-btn" onclick="startJourney()">開始旅程</button>
+  </div>
+</div>
+
+<div class="stars" id="stars"></div>
+<div class="fire-glow"></div>
+<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+<div class="app" id="app">
+
+  <!-- ===== SCENE 1: EGYPT ===== -->
+  <div class="scene" id="scene1">
+    <div class="scene-bg bg-egypt"></div>
+    <div class="content-panel">
+      <div class="scene-header">
+        <div class="scene-era">約公元前 1446 年 · 埃及</div>
+        <div class="scene-title">那一夜</div>
+        <div class="scene-verse">「因為那夜我要巡行埃及地，把埃及地一切頭生的，無論是人是牲畜，都擊殺了，又要敗壞埃及一切的神。我是耶和華。」<br>— 出埃及記 12:12</div>
+      </div>
+
+      <div class="narrative">
+        <p>夜深了。你是一個以色列家庭中的孩子，住在歌珊地。四百三十年來，你的祖先在這片土地上做苦工、被壓迫。</p>
+        <br>
+        <p>今晚不一樣。</p>
+        <br>
+        <p>父親剛用牛膝草把<strong>羊羔的血</strong>塗在門框和門楣上。母親在火上烤著整隻羊羔，屋子裡瀰漫著無酵餅的香氣。所有人都穿好了衣服、束好了腰帶、穿上了鞋子，彷彿隨時準備離開。</p>
+        <br>
+        <p>父親轉過頭來對你說：<strong>「今晚，耶和華要巡行埃及全地。凡門上有血記號的，災殃必不臨到。」</strong></p>
+        <br>
+        <p>忽然，外面傳來一陣聲響——</p>
+      </div>
+
+      <div class="choices" id="s1-choices">
+        <button class="choice-btn" onclick="choose1('peek')">走到門邊，想看看外面發生什麼事</button>
+        <button class="choice-btn" onclick="choose1('stay')">留在家人身邊，安靜等候</button>
+        <button class="choice-btn" onclick="choose1('ask')">問父親：「我們為什麼要這樣做？」</button>
+      </div>
+
+      <div class="choice-result" id="s1-result-peek">
+        你靠近門邊，卻被父親溫柔地拉回來。<strong>「不可出門。」</strong>他的聲音很堅定。你透過門縫看到——對面埃及人的房子裡，傳來撕心裂肺的哭號聲。你打了個寒顫。門楣上的血在月光下顯得格外鮮紅。你突然明白了：<strong>那道血的記號，就是生與死的分界。</strong>
+      </div>
+      <div class="choice-result" id="s1-result-stay">
+        你靠在母親身邊，她的手輕輕握著你的。屋外的哭聲越來越大，像是整片埃及地都在哀號。但在這個門內，在這道血的記號之下，<strong>平安彷彿一道看不見的牆，將你們包圍</strong>。你吃了一口無酵餅——沒有時間讓它發酵，因為你們隨時要走。
+      </div>
+      <div class="choice-result" id="s1-result-ask">
+        父親看著你，眼裡有淚光也有盼望。他說：<strong>「孩子，你要記住這一夜。耶和華看見門上的血，就越過我們的門，不讓滅命的進來。『逾越』，就是這個意思。」</strong><br><br>（出埃及記 12:26-27——日後你們的兒女問你們說：「行這禮是什麼意思？」你們就說：「這是獻給耶和華逾越節的祭。當以色列人在埃及的時候，他擊殺埃及人，越過以色列人的房屋，救了我們各家。」）
+      </div>
+
+      <div class="divider" id="s1-divider" style="display:none"></div>
+
+      <!-- Quiz 1a -->
+      <div class="quiz-section" id="s1-quiz1" style="display:none">
+        <div class="quiz-label">✦ 測驗一</div>
+        <div class="quiz-question">「逾越節」的名稱由來是什麼？</div>
+        <div class="choices">
+          <button class="choice-btn" onclick="quizAnswer('s1q1', this, 0)">以色列人「越過」紅海逃離埃及</button>
+          <button class="choice-btn" onclick="quizAnswer('s1q1', this, 1)">耶和華看見門上的血，就「越過」那家，不施行擊殺</button>
+          <button class="choice-btn" onclick="quizAnswer('s1q1', this, 2)">以色列人「跨過」曠野，進入迦南地</button>
+        </div>
+        <div class="quiz-feedback" id="s1q1-feedback"></div>
+      </div>
+
+      <!-- Quiz 1b -->
+      <div class="quiz-section" id="s1-quiz2" style="display:none">
+        <div class="quiz-label">✦ 測驗二</div>
+        <div class="quiz-question">根據出埃及記 12 章，逾越節的羊羔必須符合什麼條件？</div>
+        <div class="choices">
+          <button class="choice-btn" onclick="quizAnswer('s1q2', this, 0)">三歲以上的母羊</button>
+          <button class="choice-btn" onclick="quizAnswer('s1q2', this, 1)">無殘疾、一歲的公羊羔</button>
+          <button class="choice-btn" onclick="quizAnswer('s1q2', this, 2)">任何健康的羊都可以</button>
+        </div>
+        <div class="quiz-feedback" id="s1q2-feedback"></div>
+      </div>
+
+      <button class="next-btn" id="s1-next" onclick="goTransition(1)">進入下一個場景 →</button>
+    </div>
+  </div>
+
+  <!-- ===== SCENE 2: SEDER ===== -->
+  <div class="scene" id="scene2">
+    <div class="scene-bg bg-seder"></div>
+    <div class="content-panel">
+      <div class="scene-header">
+        <div class="scene-era">代代相傳的傳統</div>
+        <div class="scene-title">逾越節晚餐</div>
+        <div class="scene-verse">「你們要記念這日，守為耶和華的節，作為你們世世代代永遠的定例。」<br>— 出埃及記 12:14</div>
+      </div>
+
+      <div class="narrative">
+        <p>逾越節不只是歷史，它被設計成一頓<strong>可以吃的記憶</strong>。每年尼散月十四日，猶太家庭圍坐在一起，舉行 <strong>Seder（סדר，意思是「秩序」）</strong>晚餐。餐桌上的每一樣食物，都承載著一段故事。</p>
+        <br>
+        <p>點擊餐盤上的食物，了解它們的意義。</p>
+      </div>
+
+      <div class="seder-counter" id="sederCounter">已探索 0 / 6 項（全部探索後解鎖測驗）</div>
+
+      <div class="seder-table">
+        <div class="seder-plate"></div>
+        <div class="seder-item" onclick="showSederItem(0)">🦴<span class="item-label">羊脛骨</span></div>
+        <div class="seder-item" onclick="showSederItem(1)">🥚<span class="item-label">水煮蛋</span></div>
+        <div class="seder-item" onclick="showSederItem(2)">🥬<span class="item-label">苦菜</span></div>
+        <div class="seder-item" onclick="showSederItem(3)">🫓<span class="item-label">無酵餅</span></div>
+        <div class="seder-item" onclick="showSederItem(4)">🫙<span class="item-label">甜醬</span></div>
+        <div class="seder-item" onclick="showSederItem(5)">🥗<span class="item-label">青菜蘸鹽水</span></div>
+      </div>
+
+      <div class="explore-prompt" id="explorePrompt">✦ 點擊餐盤上的食物探索 ✦</div>
+
+      <div class="seder-detail" id="seder-detail">
+        <button class="close-detail" onclick="closeSederDetail()">✕</button>
+        <div class="seder-detail-title" id="seder-detail-title"></div>
+        <div class="seder-detail-text" id="seder-detail-text"></div>
+        <div class="seder-detail-verse" id="seder-detail-verse"></div>
+      </div>
+
+      <div class="divider" id="s2-divider" style="display:none"></div>
+
+      <!-- Quiz 2a -->
+      <div class="quiz-section" id="s2-quiz1" style="display:none">
+        <div class="quiz-label">✦ 測驗三</div>
+        <div class="quiz-question">逾越節晚餐中的「苦菜」象徵什麼？</div>
+        <div class="choices">
+          <button class="choice-btn" onclick="quizAnswer('s2q1', this, 0)">曠野中缺乏食物的艱苦</button>
+          <button class="choice-btn" onclick="quizAnswer('s2q1', this, 1)">以色列人在埃及為奴的苦楚</button>
+          <button class="choice-btn" onclick="quizAnswer('s2q1', this, 2)">離開家鄉的悲傷</button>
+        </div>
+        <div class="quiz-feedback" id="s2q1-feedback"></div>
+      </div>
+
+      <!-- Quiz 2b -->
+      <div class="quiz-section" id="s2-quiz2" style="display:none">
+        <div class="quiz-label">✦ 測驗四</div>
+        <div class="quiz-question">以色列人出埃及時為什麼吃無酵餅？</div>
+        <div class="choices">
+          <button class="choice-btn" onclick="quizAnswer('s2q2', this, 0)">因為耶和華禁止他們吃有酵的食物</button>
+          <button class="choice-btn" onclick="quizAnswer('s2q2', this, 1)">因為他們被催逼離開埃及，麵團來不及發酵</button>
+          <button class="choice-btn" onclick="quizAnswer('s2q2', this, 2)">因為埃及人沒收了他們的酵母</button>
+        </div>
+        <div class="quiz-feedback" id="s2q2-feedback"></div>
+      </div>
+
+      <button class="next-btn" id="s2-next" onclick="goTransition(2)">進入下一個場景 →</button>
+    </div>
+  </div>
+
+  <!-- ===== SCENE 3: UPPER ROOM ===== -->
+  <div class="scene" id="scene3">
+    <div class="scene-bg bg-upperroom"></div>
+    <div class="content-panel">
+      <div class="scene-header">
+        <div class="scene-era">約公元 30 年 · 耶路撒冷</div>
+        <div class="scene-title">最後的晚餐</div>
+        <div class="scene-verse">「又拿起餅來，祝謝了，就擘開，遞給他們，說：『這是我的身體，為你們捨的，你們也應當如此行，為的是記念我。』」<br>— 路加福音 22:19</div>
+      </div>
+
+      <div class="candle-container"><div class="candle"></div><div class="candle"></div><div class="candle"></div></div>
+
+      <div class="narrative">
+        <p>尼散月十四日的黃昏，耶穌和十二個門徒來到耶路撒冷的一間樓房，坐下來守逾越節。</p>
+        <br>
+        <p>這是一頓看似尋常的 Seder 晚餐——有無酵餅、有酒、有苦菜。但在這一夜，耶穌賦予了這些古老的象徵<strong>全新的意義</strong>。</p>
+        <br>
+        <p>傳統的逾越節晚餐有<strong>四杯酒</strong>，每一杯都對應神在出埃及記 6:6-7 的應許。耶穌特別拿起了其中一杯——點擊每杯酒來了解。</p>
+      </div>
+
+      <div class="cup-display">
+        <div class="cup" onclick="showCup(0)"><div class="cup-icon">🍷</div><div class="cup-name">成聖之杯</div></div>
+        <div class="cup" onclick="showCup(1)"><div class="cup-icon">🍷</div><div class="cup-name">拯救之杯</div></div>
+        <div class="cup" onclick="showCup(2)"><div class="cup-icon" style="filter:drop-shadow(0 0 8px rgba(201,168,76,0.5))">🍷</div><div class="cup-name" style="color:var(--gold);font-weight:700">救贖之杯</div></div>
+        <div class="cup" onclick="showCup(3)"><div class="cup-icon">🍷</div><div class="cup-name">讚美之杯</div></div>
+      </div>
+
+      <div class="cup-detail" id="cup-detail"></div>
+
+      <div class="divider" id="s3-divider" style="display:none"></div>
+
+      <div class="narrative" id="s3-bread" style="display:none">
+        <p>接著，耶穌拿起<strong>無酵餅</strong>——這原本象徵出埃及時來不及發酵的餅。他擘開餅，對門徒說：</p>
+        <br>
+        <p><strong>「這是我的身體，為你們捨的。你們也應當如此行，為的是記念我。」</strong>（路加福音 22:19）</p>
+        <br>
+        <p>逾越節的羊羔，指向的一直都是祂。<strong>那塗在門楣上的血、那被宰殺的羔羊，都是在預表這一刻</strong>——神的羔羊，將要為全人類的罪被獻上。</p>
+      </div>
+
+      <!-- Quiz 3a -->
+      <div class="quiz-section" id="s3-quiz1" style="display:none">
+        <div class="quiz-label">✦ 測驗五</div>
+        <div class="quiz-question">耶穌在最後的晚餐中拿起的「救贖之杯」，對應出埃及記 6:6 中神的哪一個應許？</div>
+        <div class="choices">
+          <button class="choice-btn" onclick="quizAnswer('s3q1', this, 0)">「我要用伸出來的膀臂重重地刑罰埃及人，救贖你們脫離他們的重擔」</button>
+          <button class="choice-btn" onclick="quizAnswer('s3q1', this, 1)">「我要以你們為我的百姓，我也要作你們的神」</button>
+          <button class="choice-btn" onclick="quizAnswer('s3q1', this, 2)">「我要把你們領進去，將那地賜給你們為業」</button>
+        </div>
+        <div class="quiz-feedback" id="s3q1-feedback"></div>
+      </div>
+
+      <!-- Quiz 3b -->
+      <div class="quiz-section" id="s3-quiz2" style="display:none">
+        <div class="quiz-label">✦ 測驗六</div>
+        <div class="quiz-question">耶穌擘開無酵餅時說「這是我的身體」，這與逾越節的哪個元素形成直接對應？</div>
+        <div class="choices">
+          <button class="choice-btn" onclick="quizAnswer('s3q2', this, 0)">苦菜——象徵祂所承受的苦難</button>
+          <button class="choice-btn" onclick="quizAnswer('s3q2', this, 1)">逾越節的羊羔——被獻上的祭物</button>
+          <button class="choice-btn" onclick="quizAnswer('s3q2', this, 2)">鹽水——象徵祂為世人流的淚</button>
+        </div>
+        <div class="quiz-feedback" id="s3q2-feedback"></div>
+      </div>
+
+      <button class="next-btn" id="s3-next" onclick="goTransition(3)">進入最後一站 →</button>
+    </div>
+  </div>
+
+  <!-- ===== SCENE 4: MODERN ===== -->
+  <div class="scene" id="scene4">
+    <div class="scene-bg bg-modern"></div>
+    <div class="content-panel">
+      <div class="scene-header">
+        <div class="scene-era">現代 · 世界各地</div>
+        <div class="scene-title">直到今日</div>
+        <div class="scene-verse">「你們每逢吃這餅，喝這杯，是表明主的死，直等到他來。」<br>— 哥林多前書 11:26</div>
+      </div>
+
+      <div class="narrative">
+        <p>三千多年過去了。逾越節沒有消失。</p>
+        <br>
+        <p>每年春天，全世界的<strong>猶太家庭</strong>仍然圍坐在一起，守 Seder 晚餐、讀哈加達（Haggadah，逾越節故事書）、唱詩歌、吃苦菜、喝四杯酒。最年幼的孩子會問：<strong>「這一夜為什麼和其他夜晚不同？」</strong>——這正是逾越節世代相傳的核心。</p>
+        <br>
+        <p>而對<strong>基督徒</strong>來說，逾越節的意義延伸到了更深的地方。使徒保羅寫道：<strong>「我們逾越節的羔羊基督已經被殺獻祭了。」</strong>（哥林多前書 5:7）每一次教會中的聖餐——擘餅與杯——都是在回應耶穌在那個逾越節晚上的吩咐。</p>
+        <br>
+        <p>逾越節不只是「過去的故事」，它是一條從出埃及延伸到今天、甚至指向未來的線。</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="narrative">
+        <p><strong>一個跨越時間的記號：</strong></p>
+        <br>
+        <p>🔸 <strong>門框上的血</strong> → 羔羊的犧牲保護了以色列人<br>
+        🔸 <strong>逾越節的羊羔</strong> → 年年獻祭，記念神的拯救<br>
+        🔸 <strong>耶穌在十字架上</strong> → 「看哪，神的羔羊，除去世人罪孽的！」（約翰福音 1:29）<br>
+        🔸 <strong>聖餐</strong> → 我們今天仍在記念，直到祂再來</p>
+      </div>
+
+      <!-- Quiz 4a -->
+      <div class="quiz-section" id="s4-quiz1">
+        <div class="quiz-label">✦ 測驗七</div>
+        <div class="quiz-question">使徒保羅在哥林多前書中稱誰為「我們逾越節的羔羊」？</div>
+        <div class="choices">
+          <button class="choice-btn" onclick="quizAnswer('s4q1', this, 0)">摩西</button>
+          <button class="choice-btn" onclick="quizAnswer('s4q1', this, 1)">基督（耶穌）</button>
+          <button class="choice-btn" onclick="quizAnswer('s4q1', this, 2)">亞伯拉罕</button>
+        </div>
+        <div class="quiz-feedback" id="s4q1-feedback"></div>
+      </div>
+
+      <!-- Quiz 4b -->
+      <div class="quiz-section" id="s4-quiz2" style="display:none">
+        <div class="quiz-label">✦ 測驗八</div>
+        <div class="quiz-question">根據哥林多前書 11:26，基督徒領聖餐（吃餅、喝杯）是在表明什麼，直到何時？</div>
+        <div class="choices">
+          <button class="choice-btn" onclick="quizAnswer('s4q2', this, 0)">表明以色列人出埃及的歷史，直到聖殿重建</button>
+          <button class="choice-btn" onclick="quizAnswer('s4q2', this, 1)">表明主的死，直等到祂再來</button>
+          <button class="choice-btn" onclick="quizAnswer('s4q2', this, 2)">表明門徒的信心，直到福音傳遍天下</button>
+        </div>
+        <div class="quiz-feedback" id="s4q2-feedback"></div>
+      </div>
+
+      <button class="next-btn" id="s4-next" onclick="showResult()">查看旅程結果 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TRANSITIONS -->
+<div class="transition-screen" id="transition1">
+  <div class="transition-verse">「你們要記念這日，<br>守為耶和華的節，<br>作為你們世世代代永遠的定例。」</div>
+  <div class="transition-ref">出埃及記 12:14</div>
+</div>
+<div class="transition-screen" id="transition2">
+  <div class="transition-verse">「我很願意在受害以先<br>和你們吃這逾越節的筵席。」</div>
+  <div class="transition-ref">路加福音 22:15</div>
+</div>
+<div class="transition-screen" id="transition3">
+  <div class="transition-verse">「我們逾越節的羔羊基督<br>已經被殺獻祭了。」</div>
+  <div class="transition-ref">哥林多前書 5:7</div>
+</div>
+
+<!-- RESULT -->
+<div class="result-screen" id="resultScreen">
+  <div class="result-content">
+    <div class="scene-era" style="margin-bottom:1rem">旅程結束</div>
+    <div class="result-title">你的逾越節旅程</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-msg" id="resultMsg"></div>
+    <div class="result-reflection">
+      <h3>💭 反思問題</h3>
+      <p>逾越節的羊羔、門上的血、無酵餅、苦菜⋯⋯這些都指向一位最終的救贖者。</p>
+      <br>
+      <p>如果你是那晚坐在最後晚餐桌前的門徒，聽到耶穌說「這是我的身體，為你們捨的」，你會有什麼感受？這對你今天的信仰生活，有什麼意義？</p>
+    </div>
+    <div class="result-reflection" style="margin-top:1.5rem">
+      <h3>📖 延伸閱讀</h3>
+      <p>今天的體驗只是起點。如果你想更深入認識逾越節，打開聖經，讀這兩段：</p>
+      <br>
+      <p><strong>出埃及記 12:1-51</strong><br>第一個逾越節的完整記載。神怎樣吩咐以色列人預備羊羔、塗血在門框上、吃無酵餅和苦菜，以及那一夜究竟發生了什麼事——都在這一章裡。這是整個逾越節故事的源頭。</p>
+      <br>
+      <p><strong>路加福音 22:7-20</strong><br>一千多年後，耶穌和門徒守的最後一次逾越節。祂怎樣擘開餅、拿起杯，把古老的儀式賦予全新的意義。讀的時候，試著把出埃及記 12 章的畫面放在心裡對照——你會發現很多驚人的連結。</p>
+    </div>
+    <button class="restart-btn" onclick="location.reload()">重新體驗 ↺</button>
+  </div>
+</div>
+
+<script>
+let score = 0;
+const totalQuestions = 8;
+let sederExplored = new Set();
+let cupsExplored = new Set();
+
+// ===== QUIZ CONFIG =====
+const quizConfig = {
+  s1q1: { correct: 1, next: 's1-quiz2',
+    ok: '✓ 正確！「逾越」（Pesach / פסח）就是「越過、跳過」的意思。神看見血的記號，就越過那家，不施行擊殺（出埃及記 12:13）。',
+    no: '✗ 不太對。「逾越」是指神「越過」門上有血記號的家庭，不施行擊殺（出埃及記 12:13）。' },
+  s1q2: { correct: 1, next: null, showNext: 's1-next',
+    ok: '✓ 正確！出埃及記 12:5 說：「要無殘疾、一歲的公羊羔，你們或從綿羊裡取，或從山羊裡取，都可以。」這預表了基督——無瑕疵的羔羊。',
+    no: '✗ 答案是「無殘疾、一歲的公羊羔」（出埃及記 12:5）。神對祭物有明確的要求，這預表了基督的完全無瑕疵。' },
+  s2q1: { correct: 1, next: 's2-quiz2',
+    ok: '✓ 正確！苦菜讓每一代人都能「嚐到」祖先在埃及為奴的苦楚——「埃及人嚴嚴地使以色列人做工，使他們因做苦工覺得命苦。」（出埃及記 1:13-14）',
+    no: '✗ 可惜！苦菜象徵的是以色列人在埃及為奴的苦楚（出埃及記 1:13-14），而不是曠野或離鄉的經歷。' },
+  s2q2: { correct: 1, next: null, showNext: 's2-next',
+    ok: '✓ 正確！出埃及記 12:39 記載：「因為他們被催逼離開埃及，不能耽延，也沒有為自己預備什麼食物。」所以麵團來不及發酵。',
+    no: '✗ 不對。根據出埃及記 12:39，是因為「他們被催逼離開埃及，不能耽延」，所以麵團來不及發酵，而非其他原因。' },
+  s3q1: { correct: 0, next: 's3-quiz2',
+    ok: '✓ 正確！第三杯「救贖之杯」對應出埃及記 6:6 的「救贖」應許。耶穌正是拿起這杯說：「這杯是用我血所立的新約，是為你們流出來的。」（路加福音 22:20）',
+    no: '✗ 救贖之杯對應的是出埃及記 6:6——「我要用伸出來的膀臂重重地刑罰埃及人，救贖你們脫離他們的重擔。」' },
+  s3q2: { correct: 1, next: null, showNext: 's3-next',
+    ok: '✓ 正確！逾越節的羊羔是被獻上作為代替的祭物，正如耶穌以自己的身體為我們捨了。保羅也明確說：「我們逾越節的羔羊基督已經被殺獻祭了。」（哥林多前書 5:7）',
+    no: '✗ 答案是「逾越節的羊羔」。耶穌的身體如同被獻上的羔羊——「我們逾越節的羔羊基督已經被殺獻祭了。」（哥林多前書 5:7）' },
+  s4q1: { correct: 1, next: 's4-quiz2',
+    ok: '✓ 正確！哥林多前書 5:7：「我們逾越節的羔羊基督已經被殺獻祭了。」',
+    no: '✗ 答案是基督（耶穌）。保羅在哥林多前書 5:7 明確說：「我們逾越節的羔羊基督已經被殺獻祭了。」' },
+  s4q2: { correct: 1, next: null, showNext: 's4-next',
+    ok: '✓ 正確！哥林多前書 11:26：「你們每逢吃這餅，喝這杯，是表明主的死，直等到他來。」聖餐同時回顧過去（主的死），也展望未來（主再來）。',
+    no: '✗ 答案是「表明主的死，直等到祂再來」。哥林多前書 11:26：「你們每逢吃這餅，喝這杯，是表明主的死，直等到他來。」' }
+};
+
+// ===== SEDER DATA =====
+const sederItems = [
+  { icon:"🦴", title:"羊脛骨（Zeroa）",
+    text:"代表逾越節的羊羔。當年在埃及，每個家庭要宰殺一隻一歲的公羊羔，把血塗在門框上。這隻羊羔必須是沒有殘疾的——完美無瑕的犧牲。今天的 Seder 餐桌上放的是一根烤過的骨頭，提醒人們那替代性的犧牲。",
+    verse:"「各家要取羊羔⋯⋯要無殘疾、一歲的公羊羔，你們或從綿羊裡取，或從山羊裡取，都可以。」— 出埃及記 12:3, 5" },
+  { icon:"🥚", title:"水煮蛋（Beitzah）",
+    text:"象徵生命與新的開始，也代表在聖殿中獻上的節期祭物。蛋越煮越硬，也象徵以色列人在苦難中變得更堅強。圓形的蛋沒有起點和終點，代表生命的循環與盼望。",
+    verse:"「我要以你們為我的百姓，我也要作你們的神。」— 出埃及記 6:7" },
+  { icon:"🥬", title:"苦菜（Maror）",
+    text:"通常使用帶有苦味的蔬菜，例如萵苣（生菜）、苦苣菜（苦菊），或西洋山葵醬。入口的苦澀讓你「嚐到」以色列人在埃及為奴四百三十年的苦楚。做苦工、被虐待、嬰兒被殺——這些痛苦不只是故事，苦菜讓每一代人親身體會那種苦。",
+    verse:"「埃及人嚴嚴地使以色列人做工，使他們因做苦工覺得命苦。」— 出埃及記 1:13-14" },
+  { icon:"🫓", title:"無酵餅（Matzah）",
+    text:"離開埃及的那一夜，一切發生得太快，麵團根本來不及發酵。無酵餅因此象徵急迫的出發和自由的來臨。在 Seder 中，主人會擘開中間那塊無酵餅，藏起一半讓孩子去找（叫做 Afikoman）。基督徒看見了更深的意義——耶穌在最後的晚餐中擘開的，正是無酵餅。",
+    verse:"「因為他們被催逼離開埃及，不能耽延，也沒有為自己預備什麼食物。」— 出埃及記 12:39" },
+  { icon:"🫙", title:"甜醬（Charoset）",
+    text:"用蘋果、核桃、蜂蜜和紅酒混合而成的棕色糊狀物，象徵以色列人在埃及做苦工時用來砌磚的泥漿。有趣的是，它嚐起來是甜的——提醒人們即使在最苦的日子裡，仍有盼望的甜美。",
+    verse:"「又使他們做磚、做灰泥⋯⋯在一切的工上都嚴嚴地待他們。」— 出埃及記 1:14" },
+  { icon:"🥗", title:"青菜蘸鹽水（Karpas）",
+    text:"取一片新鮮的芹菜或香菜，蘸入鹽水中吃。青菜象徵春天和新生，鹽水則象徵以色列人在埃及流下的眼淚。這個簡單的動作讓你在一口之間嚐到盼望和悲傷。",
+    verse:"「以色列人因做苦工，就嘆息哀求。」— 出埃及記 2:23" }
+];
+
+// ===== CUP DATA =====
+const cupData = [
+  { title:"第一杯：成聖之杯（Kiddush）",
+    text:"對應神的應許：<strong>「我是耶和華；我要⋯⋯救贖你們脫離他們的重擔，不做他們的苦工。」</strong>（出埃及記 6:6）<br><br>傳統上，這杯宣告分別——從奴役中被分別出來，歸給神。Seder 晚餐以這杯酒開始，代表一個新身分的起點。" },
+  { title:"第二杯：拯救之杯（Maggid）",
+    text:"在喝第二杯酒的時候，全家一起講述出埃及的故事。這是「說故事」的杯——讓每一代人都不會忘記神大能的拯救。<br><br>最年幼的孩子會問出那四個著名的問題，其中最重要的一個是：<strong>「這一夜為什麼和其他夜晚不同？」</strong>" },
+  { title:"第三杯：救贖之杯（Geulah）",
+    text:"對應神的應許中「救贖」一詞：<strong>「我要用伸出來的膀臂重重地刑罰埃及人，救贖你們脫離他們的重擔。」</strong>（出埃及記 6:6）<br><br>這正是耶穌在最後的晚餐中舉起的那杯。祂說：<strong>「這杯是用我血所立的新約，是為你們流出來的。」</strong>（路加福音 22:20）<br><br>逾越節羊羔的血塗在門框上帶來保護，而耶穌的血帶來的是永遠的救贖。第三杯酒，從此有了超越時間的意義。" },
+  { title:"第四杯：讚美之杯（Hallel）",
+    text:"對應神的應許：<strong>「我要以你們為我的百姓，我也要作你們的神。」</strong>（出埃及記 6:7）<br><br>晚餐以讚美結束。門徒和耶穌在最後的晚餐結束時「唱了詩」（馬太福音 26:30），唱的正是逾越節傳統的讚美詩篇（Hallel，詩篇 113-118）。這杯酒指向最終的團聚——神與祂的百姓永遠同在。" }
+];
+
+// ===== INIT =====
+(function createStars(){
+  const c=document.getElementById('stars');
+  for(let i=0;i<80;i++){
+    const s=document.createElement('div'); s.className='star';
+    s.style.left=Math.random()*100+'%'; s.style.top=Math.random()*60+'%';
+    s.style.animationDelay=Math.random()*3+'s'; s.style.opacity=Math.random()*0.5+0.2;
+    c.appendChild(s);
+  }
+})();
+
+function startJourney(){
+  document.getElementById('splash').classList.add('hidden');
+  document.getElementById('app').classList.add('active');
+  document.getElementById('scene1').classList.add('active');
+  updateProgress(1);
+}
+
+function updateProgress(scene){ document.getElementById('progressFill').style.width=(scene/5)*100+'%'; }
+
+// ===== SCENE 1 CHOICE =====
+function choose1(choice){
+  const btns=document.querySelectorAll('#s1-choices .choice-btn');
+  btns.forEach(b=>{b.disabled=true; b.style.opacity='0.4';});
+  event.target.style.opacity='1'; event.target.classList.add('selected');
+  const r=document.getElementById('s1-result-'+choice);
+  r.classList.add('show'); r.style.display='block';
+  setTimeout(()=>{
+    document.getElementById('s1-divider').style.display='block';
+    document.getElementById('s1-quiz1').style.display='block';
+    document.getElementById('s1-quiz1').scrollIntoView({behavior:'smooth',block:'center'});
+  },1500);
+}
+
+// ===== GENERIC QUIZ HANDLER =====
+function quizAnswer(qid, el, idx){
+  const cfg=quizConfig[qid];
+  const section=el.closest('.quiz-section');
+  const btns=section.querySelectorAll('.choice-btn');
+  btns.forEach((b,i)=>{
+    b.disabled=true;
+    if(i===cfg.correct) b.classList.add('correct');
+    else if(i===idx) b.classList.add('wrong');
+    else b.style.opacity='0.4';
+  });
+  const fb=document.getElementById(qid+'-feedback');
+  if(idx===cfg.correct){
+    score++; fb.className='quiz-feedback show correct-fb'; fb.textContent=cfg.ok;
+  } else {
+    fb.className='quiz-feedback show wrong-fb'; fb.textContent=cfg.no;
+  }
+  setTimeout(()=>{
+    if(cfg.next){
+      const nxt=document.getElementById(cfg.next);
+      nxt.style.display='block';
+      nxt.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+    if(cfg.showNext){
+      const btn=document.getElementById(cfg.showNext);
+      btn.classList.add('show');
+      btn.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  },1200);
+}
+
+// ===== SEDER =====
+function showSederItem(idx){
+  sederExplored.add(idx);
+  document.getElementById('sederCounter').textContent='已探索 '+sederExplored.size+' / 6 項'+(sederExplored.size<6?'（全部探索後解鎖測驗）':'  ✓');
+  // mark explored
+  document.querySelectorAll('.seder-item')[idx].classList.add('explored');
+  const d=sederItems[idx];
+  document.getElementById('seder-detail-title').innerHTML=d.icon+' '+d.title;
+  document.getElementById('seder-detail-text').innerHTML=d.text;
+  document.getElementById('seder-detail-verse').textContent=d.verse;
+  const panel=document.getElementById('seder-detail');
+  panel.classList.add('active');
+  panel.scrollIntoView({behavior:'smooth',block:'center'});
+  if(sederExplored.size>=6){
+    document.getElementById('explorePrompt').style.display='none';
+    setTimeout(()=>{
+      document.getElementById('s2-divider').style.display='block';
+      document.getElementById('s2-quiz1').style.display='block';
+    },500);
+  }
+}
+function closeSederDetail(){ document.getElementById('seder-detail').classList.remove('active'); }
+
+// ===== CUPS =====
+function showCup(idx){
+  cupsExplored.add(idx);
+  document.querySelectorAll('.cup')[idx].classList.add('explored-cup');
+  const d=cupData[idx];
+  const panel=document.getElementById('cup-detail');
+  panel.innerHTML='<h4>'+d.title+'</h4><p>'+d.text+'</p>';
+  panel.classList.add('active');
+  panel.scrollIntoView({behavior:'smooth',block:'center'});
+  if(cupsExplored.size>=4){
+    setTimeout(()=>{
+      document.getElementById('s3-divider').style.display='block';
+      document.getElementById('s3-bread').style.display='block';
+      document.getElementById('s3-quiz1').style.display='block';
+      document.getElementById('s3-bread').scrollIntoView({behavior:'smooth',block:'start'});
+    },800);
+  }
+}
+
+// ===== TRANSITIONS =====
+function goTransition(fromScene){
+  const t=document.getElementById('transition'+fromScene);
+  t.classList.add('active');
+  document.getElementById('scene'+fromScene).classList.remove('active');
+  setTimeout(()=>{
+    t.classList.remove('active');
+    const next=fromScene+1;
+    document.getElementById('scene'+next).classList.add('active');
+    updateProgress(next);
+    window.scrollTo({top:0,behavior:'smooth'});
+  },3000);
+}
+
+// ===== RESULT =====
+function showResult(){
+  document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));
+  document.getElementById('app').style.display='none';
+  document.getElementById('resultScreen').classList.add('active');
+  updateProgress(5);
+  document.getElementById('resultScore').textContent=score+' / '+totalQuestions;
+  let msg='';
+  if(score===8) msg='太棒了！滿分！你完整地走過了逾越節的旅程，從埃及的那一夜到今天的聖餐桌上。願這些古老的故事持續在你心中迴響。';
+  else if(score>=6) msg='很好！你對逾越節有了深入的認識。那些答錯的部分，或許值得再回去想想——每一個細節都有它的意義。';
+  else if(score>=4) msg='不錯的開始！逾越節的故事很豐富，每一次回顧都會有新的發現。試試重新體驗，也許會注意到更多細節。';
+  else msg='沒關係！逾越節的故事值得一讀再讀。重新體驗一次吧，你會發現更多寶藏。';
+  document.getElementById('resultMsg').textContent=msg;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
