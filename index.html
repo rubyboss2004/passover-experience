@@ -285,6 +285,8 @@ body {
 <audio id="bgm1" loop preload="auto"><source src="audio/at_that_night_loop.mp3" type="audio/mpeg"></audio>
 <audio id="bgm2" loop preload="auto"><source src="audio/passover_dinner_loop.mp3" type="audio/mpeg"></audio>
 <audio id="bgm3" loop preload="auto"><source src="audio/last_dinner_loop.mp3" type="audio/mpeg"></audio>
+<audio id="bgm4" loop preload="auto"><source src="audio/till_now_loop.mp3" type="audio/mpeg"></audio>
+<audio id="bgmEnd" loop preload="auto"><source src="audio/ending_loop.mp3" type="audio/mpeg"></audio>
 <audio id="sfxTransition" preload="auto"><source src="audio/transition-hit-and-whoosh.wav" type="audio/wav"></audio>
 <audio id="sfxClick" preload="auto"><source src="audio/finger-tapping-8.wav" type="audio/wav"></audio>
 
@@ -603,7 +605,8 @@ let cupsExplored = new Set();
 // ===== AUDIO SYSTEM =====
 let audioEnabled = true;
 let currentBgm = null;
-const bgmMap = { 1: 'bgm1', 2: 'bgm2', 3: 'bgm3', 4: null }; // scene 4 has no music yet
+let currentSceneNum = 0;
+const bgmMap = { 1: 'bgm1', 2: 'bgm2', 3: 'bgm3', 4: 'bgm4', 5: 'bgmEnd' };
 
 function toggleAudio(){
   audioEnabled = !audioEnabled;
@@ -611,11 +614,9 @@ function toggleAudio(){
   if(audioEnabled){
     btn.textContent = '🔊';
     btn.classList.remove('muted');
-    // start music for current scene
-    const activeScene = document.querySelector('.scene.active');
-    if(activeScene){
-      const sceneNum = parseInt(activeScene.id.replace('scene',''));
-      playSceneBgm(sceneNum);
+    // restart music for current scene
+    if(currentSceneNum > 0){
+      playSceneBgm(currentSceneNum);
     }
   } else {
     btn.textContent = '🔇';
@@ -629,10 +630,6 @@ function toggleAudio(){
 function playSceneBgm(sceneNum){
   if(!audioEnabled) return;
   const bgmId = bgmMap[sceneNum];
-  // fade out current
-  if(currentBgm){
-    fadeOut(currentBgm);
-  }
   if(bgmId){
     const newBgm = document.getElementById(bgmId);
     newBgm.volume = 0;
@@ -762,6 +759,7 @@ function startJourney(){
   document.getElementById('app').classList.add('active');
   document.getElementById('scene1').classList.add('active');
   updateProgress(1);
+  currentSceneNum = 1;
   playSceneBgm(1);
 }
 
@@ -856,6 +854,12 @@ function showCup(idx){
 
 // ===== TRANSITIONS =====
 function goTransition(fromScene){
+  // Immediately stop current music before transition
+  if(currentBgm){
+    currentBgm.pause();
+    currentBgm.currentTime = 0;
+    currentBgm = null;
+  }
   playTransition();
   const t=document.getElementById('transition'+fromScene);
   t.classList.add('active');
@@ -865,6 +869,7 @@ function goTransition(fromScene){
     const next=fromScene+1;
     document.getElementById('scene'+next).classList.add('active');
     updateProgress(next);
+    currentSceneNum = next;
     playSceneBgm(next);
     window.scrollTo({top:0,behavior:'smooth'});
   },3000);
@@ -872,12 +877,19 @@ function goTransition(fromScene){
 
 // ===== RESULT =====
 function showResult(){
+  // Stop current music immediately for clean transition
+  if(currentBgm){
+    currentBgm.pause();
+    currentBgm.currentTime = 0;
+    currentBgm = null;
+  }
   playTransition();
-  if(currentBgm) fadeOut(currentBgm);
   document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));
   document.getElementById('app').style.display='none';
   document.getElementById('resultScreen').classList.add('active');
   updateProgress(5);
+  currentSceneNum = 5;
+  playSceneBgm(5);
   document.getElementById('resultScore').textContent=score+' / '+totalQuestions;
   let msg='';
   if(score===8) msg='太棒了！滿分！你完整地走過了逾越節的旅程，從埃及的那一夜到今天的聖餐桌上。願這些古老的故事持續在你心中迴響。';
