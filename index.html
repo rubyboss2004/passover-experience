@@ -231,6 +231,28 @@ body {
 
 .seder-counter { text-align: center; font-size: 0.8rem; color: var(--gold); opacity: 0.6; margin: 0.5rem 0; }
 
+/* ===== AUDIO TOGGLE ===== */
+.audio-toggle {
+  position: fixed;
+  top: 16px; right: 16px;
+  z-index: 500;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: rgba(10,6,2,0.7);
+  border: 1px solid rgba(201,168,76,0.4);
+  color: var(--gold);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  transition: all 0.3s;
+  backdrop-filter: blur(8px);
+}
+.audio-toggle:hover {
+  background: rgba(201,168,76,0.2);
+  border-color: var(--gold);
+}
+.audio-toggle.muted { opacity: 0.5; }
+
 @media (max-width: 480px) {
   .splash h1 { font-size: 2.5rem; }
   .scene-title { font-size: 1.8rem; }
@@ -258,6 +280,16 @@ body {
 <div class="stars" id="stars"></div>
 <div class="fire-glow"></div>
 <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+<!-- AUDIO ELEMENTS -->
+<audio id="bgm1" loop preload="auto"><source src="audio/at_that_night_loop.mp3" type="audio/mpeg"></audio>
+<audio id="bgm2" loop preload="auto"><source src="audio/passover_dinner_loop.mp3" type="audio/mpeg"></audio>
+<audio id="bgm3" loop preload="auto"><source src="audio/last_dinner_loop.mp3" type="audio/mpeg"></audio>
+<audio id="sfxTransition" preload="auto"><source src="audio/transition-hit-and-whoosh.wav" type="audio/wav"></audio>
+<audio id="sfxClick" preload="auto"><source src="audio/finger-tapping-8.wav" type="audio/wav"></audio>
+
+<!-- AUDIO TOGGLE BUTTON -->
+<button class="audio-toggle" id="audioToggle" onclick="toggleAudio()" title="開啟/關閉音樂">🔊</button>
 
 <div class="app" id="app">
 
@@ -568,6 +600,90 @@ const totalQuestions = 8;
 let sederExplored = new Set();
 let cupsExplored = new Set();
 
+// ===== AUDIO SYSTEM =====
+let audioEnabled = true;
+let currentBgm = null;
+const bgmMap = { 1: 'bgm1', 2: 'bgm2', 3: 'bgm3', 4: null }; // scene 4 has no music yet
+
+function toggleAudio(){
+  audioEnabled = !audioEnabled;
+  const btn = document.getElementById('audioToggle');
+  if(audioEnabled){
+    btn.textContent = '🔊';
+    btn.classList.remove('muted');
+    // start music for current scene
+    const activeScene = document.querySelector('.scene.active');
+    if(activeScene){
+      const sceneNum = parseInt(activeScene.id.replace('scene',''));
+      playSceneBgm(sceneNum);
+    }
+  } else {
+    btn.textContent = '🔇';
+    btn.classList.add('muted');
+    if(currentBgm){
+      currentBgm.pause();
+    }
+  }
+}
+
+function playSceneBgm(sceneNum){
+  if(!audioEnabled) return;
+  const bgmId = bgmMap[sceneNum];
+  // fade out current
+  if(currentBgm){
+    fadeOut(currentBgm);
+  }
+  if(bgmId){
+    const newBgm = document.getElementById(bgmId);
+    newBgm.volume = 0;
+    newBgm.currentTime = 0;
+    const playPromise = newBgm.play();
+    if(playPromise) playPromise.catch(()=>{});
+    fadeIn(newBgm, 0.4);
+    currentBgm = newBgm;
+  } else {
+    currentBgm = null;
+  }
+}
+
+function fadeIn(audio, target){
+  let vol = 0;
+  const step = setInterval(()=>{
+    vol += 0.04;
+    if(vol >= target){ vol = target; clearInterval(step); }
+    audio.volume = vol;
+  }, 60);
+}
+
+function fadeOut(audio){
+  let vol = audio.volume;
+  const step = setInterval(()=>{
+    vol -= 0.04;
+    if(vol <= 0){ vol = 0; clearInterval(step); audio.pause(); }
+    audio.volume = vol;
+  }, 60);
+}
+
+function playSfx(id){
+  if(!audioEnabled) return;
+  const sfx = document.getElementById(id);
+  sfx.currentTime = 0;
+  sfx.volume = 0.5;
+  const p = sfx.play();
+  if(p) p.catch(()=>{});
+}
+
+function playClick(){ playSfx('sfxClick'); }
+function playTransition(){ playSfx('sfxTransition'); }
+
+// Attach click sound to all buttons via event delegation
+document.addEventListener('click', function(e){
+  const target = e.target.closest('button, .seder-item, .cup, .choice-btn');
+  if(target && !target.id.includes('audioToggle')){
+    playClick();
+  }
+});
+
 // ===== QUIZ CONFIG =====
 const quizConfig = {
   s1q1: { correct: 1, next: 's1-quiz2',
@@ -646,6 +762,7 @@ function startJourney(){
   document.getElementById('app').classList.add('active');
   document.getElementById('scene1').classList.add('active');
   updateProgress(1);
+  playSceneBgm(1);
 }
 
 function updateProgress(scene){ document.getElementById('progressFill').style.width=(scene/5)*100+'%'; }
@@ -739,6 +856,7 @@ function showCup(idx){
 
 // ===== TRANSITIONS =====
 function goTransition(fromScene){
+  playTransition();
   const t=document.getElementById('transition'+fromScene);
   t.classList.add('active');
   document.getElementById('scene'+fromScene).classList.remove('active');
@@ -747,12 +865,15 @@ function goTransition(fromScene){
     const next=fromScene+1;
     document.getElementById('scene'+next).classList.add('active');
     updateProgress(next);
+    playSceneBgm(next);
     window.scrollTo({top:0,behavior:'smooth'});
   },3000);
 }
 
 // ===== RESULT =====
 function showResult(){
+  playTransition();
+  if(currentBgm) fadeOut(currentBgm);
   document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));
   document.getElementById('app').style.display='none';
   document.getElementById('resultScreen').classList.add('active');
